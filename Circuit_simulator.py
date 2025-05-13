@@ -98,10 +98,18 @@ class Node:
             i+=1
     
     def disconnect_all(self):
+        next=[]
         for i in self.next:
+            next.append(i)
+        
+        pre=[]
+        for i in self.pre:
+            pre.append(i)
+        
+        for i in next:
             self.disconnect(i)
         
-        for i in self.pre:
+        for i in pre:
             i.disconnect(self)
     
     def run(self):
