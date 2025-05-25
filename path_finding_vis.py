@@ -67,6 +67,7 @@ class Node:
         self.next=[]
         self.pre=[]
         self.data=False
+        self.previous=None
     
     def connect(self,node):
         if self not in node.pre:
@@ -102,10 +103,9 @@ class Node:
         pygame.draw.circle(screen,color,self.pos,self.rad)
         
         for i in self.next:
-            pygame.draw.line(screen,color,self.pos,i.pos,3)
+            pygame.draw.line(screen,gray,self.pos,i.pos,3)
 
 nodes=[]
-
 selected=None
 finger=False
 id=0
@@ -118,15 +118,24 @@ start=Button((width/8*7,height-width/8,width/8,width/8))
 
 wire_mode=False
 wire_type=True
-find=False
-first=None
+
+start_search=False
+ss=0
+
+begin=None
 target=None
+searched=[]
+front=[]
+
+done_search=False
+tt=0
+
+path=[]
 
 while True:
     screen.fill(black)
     
     add.run()
-    delete.run()
     start.run()
     
     if (add.pressed)&(not add.one):
@@ -139,16 +148,10 @@ while True:
         add.one=False
     
     if (start.pressed)&(not start.one):
-        find=not find
-        if not find:
-            if first:
-                first.data=False
-                first=None
-            
-            if target:
-                target.data=False
-                target=None
-        
+        start_search=not start_search
+        if not start_search:
+            begin=None
+            target=None
         start.one=True
     
     elif not start.pressed:
@@ -179,14 +182,12 @@ while True:
                         finger=True
                         selected=j
                         
-                        if find:
-                            if not start:
-                                start=j
-                                j.data=True
-                        
-                            elif start:
+                        if start_search:
+                            if not begin:
+                                begin=j
+                            
+                            elif not target:
                                 target=j
-                                j.data=True
                     
                     found=True
                     break
@@ -207,12 +208,21 @@ while True:
         pygame.draw.circle(screen,green,selected.pos,selected.rad+2,3)
         write("node id : "+str(selected.id),(20,20),60)
         
+        delete.run()
+        
         if delete.pressed:
             selected.clear()
             for i in range(len(nodes)):
                 if nodes[i]==selected:
                     nodes.pop(i)
                     break
+            
+            if begin==selected:
+                begin=None
+            
+            if target==selected:
+                target=None
+            
             selected=None
     
         wire.run()
@@ -235,6 +245,79 @@ while True:
     
             elif not type.pressed:
                 type.one=False
+    
+    if start_search:
+        if (bool(begin))&(bool(target))&(not done_search):
+            pygame.draw.circle(screen,red,begin.pos,begin.rad)
+            pygame.draw.circle(screen,green,target.pos,target.rad)
+            
+            if (0<=ss<10):
+                write("searching",(20,140),60)
+        
+            elif (10<=ss<20):
+                write("searching.",(20,140),60)
+        
+            elif (20<=ss<30):
+                write("searching..",(20,140),60)
+        
+            else :
+                write("searching...",(20,140),60)
+        
+            if ss<40:
+                ss+=0.5
+        
+            else :
+                ss=0
+            
+            if (not done_search)&(tt==100):
+                if len(front)==0:
+                    front.append(begin)
+                
+                if len(front)>0:
+                    for i in front:
+                        if target==i:
+                            done_search=True
+                        
+                        else :
+                            searched.append(i)
+                            i.data=True
+                    
+                    new_front=[]
+                    for i in front:
+                        for j in i.next:
+                            if j not in searched:
+                                new_front.append(j)
+                                j.previous=i
+                    
+                    front=[]
+                    for i in new_front:
+                        front.append(i)
+            
+            if tt<100:
+                tt+=1
+            
+            elif tt>=100 :
+                tt=0
+            
+            if done_search:
+                for i in nodes:
+                    i.data=False
+                
+                while target!=begin:
+                    path.append(target)
+                    target=target.previous
+                
+                for i in path:
+                    i.data=True
+                
+                begin.data=True
+                
+        elif not begin:
+            write("select a start point",(20,140))
+        
+        elif not target:
+            pygame.draw.circle(screen,red,begin.pos,begin.rad)
+            write("select a target point",(20,140))
     
     pygame.display.update()
 #____________________________________________________________________________________________________________
